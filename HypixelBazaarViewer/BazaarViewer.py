@@ -3,7 +3,9 @@ import json
 import string
 
 #every Bazaar product: https://api.hypixel.net/skyblock/bazaar/products?key=YourApiKey
-#nice spreadsheet with prices: https://docs.google.com/spreadsheets/d/1_ej-xLzpVEvrGmp3JOXRFC5B_gHwJPMpB3SYMC3dDDY/edit#gid=0
+#Thanks to ThisIsMyPassword for this spreadsheet
+#And thanks for every Betatester
+##nice spreadsheet with prices: https://docs.google.com/spreadsheets/d/1_ej-xLzpVEvrGmp3JOXRFC5B_gHwJPMpB3SYMC3dDDY/edit#gid=0
 print('''  ______ _      _____ __  __ __  __ ______ _____   _____ 
  |  ____| |    |_   _|  \/  |  \/  |  ____|  __ \ / ____|
  | |__  | |      | | | \  / | \  / | |__  | |__) | (___  
@@ -107,7 +109,6 @@ ProductId = (NPCPrices['productIds'][Product]['NormalName'])
     #Request Bazaar Prices
 payload = {'key': ApiKey}
 r = requests.get('https://api.hypixel.net/skyblock/bazaar', params=payload)
-#print('`The Api URL is: ' + r.url)
 JSONData = (r.json())
 result = str(JSONData)
 
@@ -147,3 +148,7 @@ if rProfit > 0:
     print('You would make ' + str(rProfit) + ' coins per item with this, do it!')
 else:
     print('You would lose coins, ('+ str(rProfit) + ' coins) dont do it!')
+print()
+print()
+print()
+print("Buy me VIP, IGN: flimmerkraft")
