@@ -4,7 +4,7 @@ import string
 
 #every Bazaar product: https://api.hypixel.net/skyblock/bazaar/products?key=YourApiKey
 #nice spreadsheet with prices: https://docs.google.com/spreadsheets/d/1_ej-xLzpVEvrGmp3JOXRFC5B_gHwJPMpB3SYMC3dDDY/edit#gid=0
-print("""  ______ _      _____ __  __ __  __ ______ _____   _____ 
+print('''  ______ _      _____ __  __ __  __ ______ _____   _____ 
  |  ____| |    |_   _|  \/  |  \/  |  ____|  __ \ / ____|
  | |__  | |      | | | \  / | \  / | |__  | |__) | (___  
  |  __| | |      | | | |\/| | |\/| |  __| |  _  / \___ \ 
@@ -26,102 +26,124 @@ print("""  ______ _      _____ __  __ __  __ ______ _____   _____
   ___) | |_| | |_| || |                                  
  |____/ \___/ \___/ |_|                                  
                                                          
-                               """)
-
-     ########YOUR API KEY HERE!!##########
-    #ApiKey = "AddYourApiKey!"
+                               ''')
 
 
-
-    #Product you wanna see?
 print()
 print()
-Product = input("Product you want to see? For example: Wheat (Every word has to be capitalized cause i cant programm)\n")
-print("Ok, you want to see the product " + Product)
-ApiKey = input("Your ApiKey?\n")
-print("Ok, your ApiKey is:  " + ApiKey)
-Product = Product.lower()
+
+#Select a product
+Product = input('What product you want to see? For example: Wheat\n')
+print('Ok, you want to see the product ' + Product)
+
+#making input lowercase 
 NormalPName = Product
-    #making input lowercase 
 Product = Product.lower()
-    #MERSHANT PRICES
 
-    # read file
-with open('Prices.json', 'r') as myfile:
-    data=myfile.read()
+# Read/Get API Key
+try:
+    # Read cached API Key
+    with open('apiKey.json', 'r') as apiFile:
+        apiKeyString = apiFile.read()
 
-    # parse file
+    apiKeyJson = json.loads(apiKeyString)
+
+    if apiKeyJson['success'] == True:
+        ApiKey = apiKeyJson['key']
+    else:
+        raise FileNotFoundError
+    
+    # Check API Key by sending a request
+    payload = {'key': ApiKey}
+    request = requests.get('https://api.hypixel.net/key', params=payload)
+    jsonData = request.json()
+
+    if jsonData['success'] != True:
+        print('Problem encountered testing API key: ' + jsonData['cause'])
+        print('Reprompting user for API key.')
+        raise FileNotFoundError
+
+except FileNotFoundError:
+    ApiKey = input('What is your API key? (use /api new in-game if you do not have one)\n')
+    print('Ok, your ApiKey is:  ' + ApiKey)
+    with open('apiKey.json', 'w') as apiFile:
+        apiKeyJson = { 'success': True, 'key': ApiKey}
+        apiFile.write(json.dumps(apiKeyJson))
+
+#Read Merchant Prices
+
+    # read file, or download it if it doesn't exist
+try:
+    with open('Prices.json', 'r') as myfile:
+        data=myfile.read()
+except FileNotFoundError:
+    print('Downloading latest prices from GitHub...')
+    pricesRequest = requests.get("https://raw.githubusercontent.com/wwhtrbbtt/HypixelBazaarViewer/master/HypixelBazaarViewer/Prices.json")
+    data = pricesRequest.text
+    with open('Prices.json', 'w') as priceFile:
+        priceFile.write(data)
+        print('Successfully cached merchant prices!')
+
+    # parse data
 NPCPrices = json.loads(data)
-#print("succses?: " + str(obj['succses']))
 
-FileReadSuccses = (NPCPrices["success"])
-print("Was reading the file a succses? " + FileReadSuccses)
+FileReadSuccses = (NPCPrices['success'])
+print('Was reading the merchant prices file a success? ' + 'Yes!' if FileReadSuccses else 'No!')
 
 
     #getting the NPC prices
-NPCSellPrice = (NPCPrices["productIds"][Product]["MerchantSellPrice"])
-NPCBuyPrice = (NPCPrices["productIds"][Product]["MerchantBuyPrice"])
-
-
-    #make the prices to floats
-fNPCBuyPrice = str(NPCBuyPrice)  # float -> str
-fNPCSellPrice = str(NPCSellPrice)  # float -> str
+NPCSellPrice = (NPCPrices['productIds'][Product]['MerchantSellPrice'])
+NPCBuyPrice = (NPCPrices['productIds'][Product]['MerchantBuyPrice'])
 
     #printing the prices
 
-print("You can buy " + NormalPName + " from an NPC for " + fNPCBuyPrice + "$ and sell it to him for " + fNPCSellPrice + "$")
+print('You can buy ' + NormalPName + ' from an NPC for ' + str(NPCBuyPrice) + ' coins and sell via NPC for ' + str(NPCSellPrice) + ' coins')
 
-Product = (NPCPrices["productIds"][Product]["NormalName"])
+ProductId = (NPCPrices['productIds'][Product]['NormalName'])
 
 
-    #BAZAAR PRICES
+# Get Bazaar Prices
 
-    #getting the data
-payload = {'key': ApiKey, "productId": Product}
-r = requests.get('https://api.hypixel.net/skyblock/bazaar/product?', params=payload)
-#print("`The Api URL is: " + r.url)
+    #Request Bazaar Prices
+payload = {'key': ApiKey}
+r = requests.get('https://api.hypixel.net/skyblock/bazaar', params=payload)
+#print('`The Api URL is: ' + r.url)
 JSONData = (r.json())
 result = str(JSONData)
 
 
-    #did it sucsess?
-print("Was connecting to the Hypixel API a succses?")
-print(JSONData["success"])
+    #Check for successful connection
+if JSONData['success'] != True:
+    print('Was connecting to the Hypixel API a success? No!')
+    print('Here is the cause: ' + JSONData['cause'])
+    raise RuntimeError(JSONData['cause'])
+else:
+    print('Was connecting to the Hypixel API a success? Yes!')
 
 
-    #get the prices
-sellPrice = (JSONData["product_info"]['quick_status']['buyPrice'])
-buyPrice = (JSONData['product_info']['quick_status']['sellPrice'])
+    #Get the requested prices
+sellPrice = (JSONData['products'][ProductId]['quick_status']['sellPrice'])
+buyPrice = (JSONData['products'][ProductId]['quick_status']['buyPrice'])
 
 
-    #round up the prices
+    #Round prices
 rSellPrice = round(sellPrice, 2)
 rBuyPrice = round(buyPrice, 2)
 
-    #make the prices to floats
-FrSellPrice = str(rSellPrice)  # float -> str
-FrBuyPrice = str(rBuyPrice)  # float -> str
-
-    #print the prices
-print("You can buy " + NormalPName + " from the bazaar for " + FrBuyPrice + "$ and sell it to the bazaar for " + FrSellPrice + "$")
+    #Print Prices
+print('You can buy ' + NormalPName + ' from the bazaar for ' + str(rBuyPrice) + ' coins and sell it to the bazaar for ' + str(rSellPrice) + ' coins')
 
 
-    #Do you make Profit?
-fffNPCBuyPrice = float(NPCBuyPrice)
-#rSellPrice = float(rSellPrice)
-Profit = rSellPrice - fffNPCBuyPrice
-#Profit = float(Profit)
+    #Calculate Profit
+Profit = rSellPrice - NPCBuyPrice
 rProfit = round(Profit, 2)
-srProfit = str(rProfit)
 
 print()
 print()
 print()
-print("--------------------------------------")
+print('--------------------------------------')
 
-#if FrSellPrice > fNPCBuyPrice:
-if srProfit > "0":
-    print("You are making " + srProfit + "$ with this, do it!")
+if rProfit > 0:
+    print('You would make ' + str(rProfit) + ' coins per item with this, do it!')
 else:
-    print("You are losing money, ("+ srProfit + "$) dont do it!")
-
+    print('You would lose coins, ('+ str(rProfit) + ' coins) dont do it!')
